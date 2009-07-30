@@ -21,7 +21,8 @@ var Droppables = {
     var options = Object.extend({
       greedy:     true,
       hoverclass: null,
-      tree:       false
+      tree:       false,
+      scrollid:   null
     }, arguments[1] || { });
 
     // cache containers
@@ -64,6 +65,15 @@ var Droppables = {
   },
   
   isAffected: function(point, element, drop) {
+     if( drop.scrollid ){
+      Position.includeScrollOffsets = true;
+      scrolling_element = $(drop.scrollid)
+      var container_off = Element.cumulativeOffset(scrolling_element); 
+      if( point[1] < container_off[1] || point[1] > Element.getHeight(scrolling_element) + container_off[1])
+        {return false;}
+      else if( point[0] < container_off[0] || point[0] > Element.getWidth(scrolling_element) + container_off[0])
+        {return false;}
+    }
     return (
       (drop.element!=element) &&
       ((!drop._containers) ||
@@ -637,7 +647,6 @@ var Sortable = {
       delay:       0,
       hoverclass:  null,
       ghosting:    false,
-	  previewClass:null,
       quiet:       false, 
       scroll:      false,
       scrollSensitivity: 20,
@@ -684,11 +693,6 @@ var Sortable = {
 
     if(options.zindex)
       options_for_draggable.zindex = options.zindex;
-
-	if (options.previewClass) {  
-		options_for_draggable.onStart = Sortable.startDrag;
-		options_for_draggable.onEnd = Sortable.endDrag;
-	}
 
     // build options for the droppables  
     var options_for_droppable = {
@@ -744,24 +748,6 @@ var Sortable = {
 
   },
 
-  // startDrag, creates the correctly sized preview element
-  startDrag: function(draggable, event) {
-	var options = Sortable.options(draggable.element);
-	var element = draggable.element;  
-	// We'll always be sorting one thing at a time, so store the preview element in Sortable
-	Sortable._curPreview = new Element(options.tag, {"class": options.previewClass});
-	Sortable._curPreview.setStyle({"width": element.getWidth() + "px", "height": element.getHeight() + "px", "position": "relative"});
-	draggable.element.absolutize();
-  },
-
-  // endDrag, removes the preview element
-  endDrag: function(draggable, event) {
-	  if (Sortable._curPreview.parentNode) {
-    	Sortable._curPreview.remove();
-	  }
-	draggable.element.relativize();
-  },
-
   // return all suitable-for-sortable elements in a guaranteed order
   findElements: function(element, options) {
     return Element.findChildren(
@@ -784,9 +770,6 @@ var Sortable = {
         var oldParentNode = element.parentNode;
         element.style.visibility = "hidden"; // fix gecko rendering
         dropon.parentNode.insertBefore(element, dropon);
-		if (Sortable._curPreview) {
-        	dropon.parentNode.insertBefore(Sortable._curPreview, dropon);
-		}
         if(dropon.parentNode!=oldParentNode) 
           Sortable.options(oldParentNode).onChange(element);
         Sortable.options(dropon.parentNode).onChange(element);
@@ -798,9 +781,6 @@ var Sortable = {
         var oldParentNode = element.parentNode;
         element.style.visibility = "hidden"; // fix gecko rendering
         dropon.parentNode.insertBefore(element, nextElement);
-		if (Sortable._curPreview) {
-        	dropon.parentNode.insertBefore(Sortable._curPreview, nextElement);
-		}
         if(dropon.parentNode!=oldParentNode) 
           Sortable.options(oldParentNode).onChange(element);
         Sortable.options(dropon.parentNode).onChange(element);
@@ -835,9 +815,6 @@ var Sortable = {
       }
       
       dropon.insertBefore(element, child);
-	  if (Sortable._curPreview) {
-      	dropon.insertBefore(Sortable._curPreview, child);
-	  }
       
       Sortable.options(oldParentNode).onChange(element);
       droponOptions.onChange(element);
