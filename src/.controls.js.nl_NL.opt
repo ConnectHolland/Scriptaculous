@@ -371,6 +371,49 @@ Ajax.Autocompleter = Class.create(Autocompleter.Base, {
   }
 });
 
+if (Prototype.Browser.IE && "undefined" == typeof document.documentMode || Prototype.Browser.IE && document.documentMode < 8) {
+  // In IE7 and earlier and IE8 in quirks mode, the Ajax.Autocompleter will disappear if the user
+  // clicks on the window's scrollbar since this causes the auto-completer to blur. Under IE8 and
+  // and later in standards mode and Firefox the scrollbar does not cause the auto-completer to blur.
+  // This fix works around this issue by delaying the blur by 200ms and determining if the user has
+  // clicked on a real HTML element or not.
+  // See http://www.nabble.com/AutoComplete-results-disappear-when-using-scrollbar-in-IE-td23612503.html
+  // for discussion of this issue.
+  Ajax.FixedAutocompleter = Class.create(Ajax.Autocompleter, {
+    initialize: function($super, element, update, url, options) {
+      $super(element, update, url, options);
+      
+      this.clicked_outside = false;
+      Event.observe(document, "click", this.onDocumentClick.bindAsEventListener(this));
+      this.element.stopObserving("blur");
+      this.element.observe("blur", this.onBlurOverride.bindAsEventListener(this));
+    },
+    
+    onDocumentClick: function(event) {
+      if (this.element.id != event.target.id) {
+        this.clicked_outside = true;
+      }
+    },
+    
+    onBlurOverride: function(event) {
+      var thisObject = this;
+      var callback = function() {
+        if (thisObject.clicked_outside) {
+          thisObject.clicked_outside = false;
+          thisObject.onBlur(event);
+        }
+        else {
+          thisObject.element.focus();
+        }
+      }
+      setTimeout(callback, 200);
+    }
+  });
+}
+else {
+  Ajax.FixedAutocompleter = Ajax.Autocompleter;
+}
+
 // The local array autocompleter. Used when you'd prefer to
 // inject an array of autocompletion options into the page, rather
 // than sending out Ajax queries, which can be quite slow sometimes.
