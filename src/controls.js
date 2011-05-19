@@ -93,14 +93,17 @@ Autocompleter.Base = Class.create({
 
   show: function() {
     if(Element.getStyle(this.update, 'display')=='none') this.options.onShow(this.element, this.update);
-    if(!this.iefix && 
-      (Prototype.Browser.IE) &&
-      (Element.getStyle(this.update, 'position')=='absolute')) {
-      new Insertion.After(this.update, 
-       '<iframe id="' + this.update.id + '_iefix" '+
-       'style="display:none;position:absolute;filter:progid:DXImageTransform.Microsoft.Alpha(opacity=0);" ' +
-       'src="javascript:false;" frameborder="0" scrolling="no"></iframe>');
-      this.iefix = $(this.update.id+'_iefix');
+    if(!this.iefix && (Prototype.Browser.IE) && (Element.getStyle(this.update, 'position')=='absolute')) {
+      if ( $(this.update.id+'_iefix') ) {
+        this.iefix = $(this.update.id+'_iefix');
+      }
+      else {
+        new Insertion.After(this.update, 
+         '<iframe id="' + this.update.id + '_iefix" '+
+         'style="display:none;position:absolute;filter:progid:DXImageTransform.Microsoft.Alpha(opacity=0);" ' +
+         'src="javascript:false;" frameborder="0" scrolling="no"></iframe>');
+        this.iefix = $(this.update.id+'_iefix');
+      }
     }
     if(this.iefix) setTimeout(this.fixIEOverlapping.bind(this), 50);
   },
