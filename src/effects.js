@@ -509,16 +509,17 @@ Effect.Highlight = Class.create(Effect.Base, {
 
 Effect.ScrollTo = function(element) {
   var options = arguments[1] || { },
-  scrollOffsets = document.viewport.getScrollOffsets(),
-  elementOffsets = $(element).cumulativeOffset();
+    scrollOffsets = document.viewport.getScrollOffsets(),
+    elementOffsets = $(element).cumulativeOffset(),
+    max = (window.height || document.body.scrollHeight) - document.viewport.getHeight();  
 
   if (options.offset) elementOffsets[1] += options.offset;
 
   return new Effect.Tween(null,
     scrollOffsets.top,
-    elementOffsets[1],
+    elementOffsets[1] > max ? max : elementOffsets[1],
     options,
-    function(p){ scrollTo(scrollOffsets.left, p.round()); }
+    function(p){ scrollTo(scrollOffsets.left, p.round()) }
   );
 };
 
